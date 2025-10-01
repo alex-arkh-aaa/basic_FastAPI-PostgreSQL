@@ -2,7 +2,7 @@ from fastapi import FastAPI, responses, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from .database import get_db, create_tables
 from . import crud
-from .schemas import User, UserResponse
+from .schemas import *
 from contextlib import asynccontextmanager
 from .security import *
 from sqlalchemy import select
@@ -40,16 +40,9 @@ async def delete_user(user_id: int, db: AsyncSession = Depends(get_db)):
         raise HTTPException(status_code=404, detail="User not found")
     return {"message": "User deleted"}
 
-
-# @app.post("/users/", response_model=UserResponse)
-# async def create_user(user: User, db: AsyncSession = Depends(get_db)):
-#     return await crud.create_user(db, user.name, user.email, user.age)
-
 @app.post("/register/")
 async def register_user(user: User, db: AsyncSession = Depends(get_db)):
     existing_user = await crud.get_user_by_email(db, user.email)
-    #existing_user = await db.execute(select(User).where(User.email == user.email))
-    print(existing_user)
     if existing_user:
         raise HTTPException(status_code=400, detail="Пользователь уже существует")
 
@@ -57,6 +50,18 @@ async def register_user(user: User, db: AsyncSession = Depends(get_db)):
     new_user = await crud.create_user(db, user.name, user.email, user.age, hashed_password)
 
     return {"msg": "Пользователь успешно зарегистрирован", 'user': new_user}
+
+
+@app.post("/token")
+async def login(user_token: UserToken, db: AsyncSession = Depends(get_db)):
+    existing_user = await crud.get_user_by_email(db, user_token.email)
+
+    if not existing_user or not verify_password(user_token.password, existing_user.hashed_password):
+        raise HTTPException(status_code=401, detail="Неверный логин или пароль")
+
+    token_data = {"sub": user_token.email}
+    access_token = create_access_token(data=token_data)
+    return {"access_token": access_token, "token_type": "bearer"}
 
 # if __name__ == "__main__":
 #     import uvicorn

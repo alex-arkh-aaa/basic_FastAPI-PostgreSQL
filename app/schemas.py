@@ -12,7 +12,10 @@ class UserResponse(BaseModel):
     name: str
     email: str
     age: int
-    hashed_password: str
 
     class Config:
         from_attributes = True
+
+class UserToken(BaseModel):
+    email: str
+    password: str
