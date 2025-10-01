@@ -16,6 +16,6 @@ class UserResponse(BaseModel):
     class Config:
         from_attributes = True
 
-class UserToken(BaseModel):
+class UserCreds(BaseModel):
     email: str
     password: str
